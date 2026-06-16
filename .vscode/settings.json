@@ -1,0 +1,12 @@
+{
+    "laravel-pint.enable": true,
+    "bladeFormatter.format.enabled": true,
+    "bladeFormatter.format.sortHtmlAttributes": "alphabetical",
+    "bladeFormatter.format.sortTailwindcssClasses": true,
+    "bladeFormatter.format.wrapAttributes": "force-expand-multiline",
+    "[php]": {
+        "editor.defaultFormatter": "open-southeners.laravel-pint",
+        "editor.formatOnSave": true
+    },
+    "intelephense.environment.phpVersion": "8.4.0"
+}

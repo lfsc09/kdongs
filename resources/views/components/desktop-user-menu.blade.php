@@ -1,0 +1,50 @@
+<flux:dropdown
+    align="start"
+    position="bottom"
+>
+    <flux:sidebar.profile
+        :initials="auth()->user()->initials()"
+        :name="auth()->user()->name"
+        data-test="sidebar-menu-button"
+        icon:trailing="chevrons-up-down"
+    />
+
+    <flux:menu>
+        <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+            <flux:avatar
+                :initials="auth()->user()->initials()"
+                :name="auth()->user()->name"
+            />
+            <div class="grid flex-1 text-start text-sm leading-tight">
+                <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
+                <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
+            </div>
+        </div>
+        <flux:menu.separator />
+        <flux:menu.radio.group>
+            <flux:menu.item
+                :href="route('profile.edit')"
+                icon="cog"
+                wire:navigate
+            >
+                {{ __('Settings') }}
+            </flux:menu.item>
+            <form
+                action="{{ route('logout') }}"
+                class="w-full"
+                method="POST"
+            >
+                @csrf
+                <flux:menu.item
+                    as="button"
+                    class="w-full cursor-pointer"
+                    data-test="logout-button"
+                    icon="arrow-right-start-on-rectangle"
+                    type="submit"
+                >
+                    {{ __('Log out') }}
+                </flux:menu.item>
+            </form>
+        </flux:menu.radio.group>
+    </flux:menu>
+</flux:dropdown>

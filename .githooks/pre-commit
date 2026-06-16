@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Collect staged PHP files (added, copied, modified, renamed)
+mapfile -t staged_php_files < <(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.php$' || true)
+
+# Nothing to format
+if [ ${#staged_php_files[@]} -eq 0 ]; then
+  exit 0
+fi
+
+# Safety: abort if a staged file also has unstaged changes to avoid
+# accidentally staging unreviewed code after Pint reformats it.
+for file in "${staged_php_files[@]}"; do
+  if ! git diff --quiet -- "$file"; then
+    echo "Pre-commit aborted: '$file' has unstaged changes."
+    echo "Stage or stash them, then commit again."
+    exit 1
+  fi
+done
+
+# Run Pint only on the staged PHP files
+./vendor/bin/pint "${staged_php_files[@]}"
+
+# Re-stage any formatting changes Pint made
+git add "${staged_php_files[@]}"
