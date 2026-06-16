@@ -22,7 +22,11 @@ composer clone-setup
 Configure git hooks.
 
 ```bash
-composer configure-dev-githooks
+# Linux
+composer configure-dev-githooks-linux
+
+# Windows
+composer configure-dev-githooks-windows
 ```
 
 Start the development containers (Postgres, Redis, Mailpit).
