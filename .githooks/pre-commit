@@ -19,8 +19,28 @@ for file in "${staged_php_files[@]}"; do
   fi
 done
 
+# Resolve PHP binary: try PATH first, then common Herd install locations
+if command -v php &>/dev/null; then
+  PHP_BIN="php"
+elif [ -d "$HOME/.config/herd/bin" ]; then
+  # Laravel Herd (Windows & macOS) — pick highest installed PHP version
+  herd_php=$(ls "$HOME/.config/herd/bin/" | grep -E '^php[0-9]+$' | sort -V | tail -1)
+  if [ -n "$herd_php" ]; then
+    if [ -f "$HOME/.config/herd/bin/$herd_php/php.exe" ]; then
+      PHP_BIN="$HOME/.config/herd/bin/$herd_php/php.exe"  # Windows
+    elif [ -f "$HOME/.config/herd/bin/$herd_php/php" ]; then
+      PHP_BIN="$HOME/.config/herd/bin/$herd_php/php"      # macOS
+    fi
+  fi
+fi
+
+if [ -z "${PHP_BIN:-}" ]; then
+  echo "Pre-commit aborted: PHP not found. Ensure PHP is in PATH or install Laravel Herd."
+  exit 1
+fi
+
 # Run Pint only on the staged PHP files
-./vendor/bin/pint "${staged_php_files[@]}"
+"$PHP_BIN" ./vendor/bin/pint "${staged_php_files[@]}"
 
 # Re-stage any formatting changes Pint made
 git add "${staged_php_files[@]}"
