@@ -5,6 +5,7 @@ namespace Database\Factories\Investment;
 use App\Enums\Investments\CurrencyCode;
 use App\Enums\Investments\WalletMovementType;
 use App\Models\Investment\WalletMovement;
+use BcMath\Number;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -136,17 +137,19 @@ class WalletMovementFactory extends Factory
         /** @var CurrencyCode $randomResultCurrency */
         $randomResultCurrency = $resultCurrency ?? $this->faker->randomElement(CurrencyCode::cases());
 
-        $randomOriginAmount = $type->isDeposit()
-            ? $this->faker->numberBetween(10000, 10000000)
-            : -$this->faker->numberBetween(10000, 10000000);
+        $randomOriginAmount = new Number(
+            $type->isDeposit()
+                ? $this->faker->numberBetween(10000, 10000000)
+                : -$this->faker->numberBetween(10000, 10000000)
+        );
 
         if ($randomOriginCurrency === $randomResultCurrency) {
             $randomOriginExchGrossRate = null;
             $randomOriginExchOpFeePerc = null;
             $randomOriginExchVetRate = null;
         } else {
-            $randomOriginExchGrossRate = $this->faker->randomFloat(6, 0, 7);
-            $randomOriginExchOpFeePerc = $this->faker->randomFloat(2, 0, 0.05);
+            $randomOriginExchGrossRate = new Number($this->faker->randomFloat(6, 0, 7));
+            $randomOriginExchOpFeePerc = new Number($this->faker->randomFloat(2, 0, 0.05));
             $randomOriginExchVetRate = $this->calculateExchVetRate($randomOriginExchGrossRate, $randomOriginExchOpFeePerc);
         }
 
@@ -157,7 +160,7 @@ class WalletMovementFactory extends Factory
             'randomOriginExchOpFeePerc' => $randomOriginExchOpFeePerc,
             'randomOriginExchVetRate' => $randomOriginExchVetRate,
             'randomResultCurrency' => $randomResultCurrency,
-            'randomResultAmount' => (int) round($randomOriginAmount * ($randomOriginExchVetRate ?? 1)),
+            'randomResultAmount' => $randomOriginAmount->mul($randomOriginExchVetRate ?? 1),
         ];
     }
 }

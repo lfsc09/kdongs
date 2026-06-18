@@ -14,7 +14,7 @@ use Override;
 
 /**
  * @property string $id
- * @property int $user_id
+ * @property string $user_id
  * @property string $name
  * @property CurrencyCode $view_currency
  * @property CurrencyCode $fiscal_residence_currency
