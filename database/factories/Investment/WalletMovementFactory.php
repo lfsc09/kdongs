@@ -128,7 +128,7 @@ class WalletMovementFactory extends Factory
      * @param  WalletMovementType  $type  The type of wallet movement (deposit or withdrawal).
      * @param  CurrencyCode|null  $originCurrency  Optional specific origin currency code to use for the movement.
      * @param  CurrencyCode|null  $resultCurrency  Optional specific result currency code to use for the movement.
-     * @return array An associative array containing the generated conversion values.
+     * @return array{randomOriginCurrency: CurrencyCode, randomOriginAmount: Number, randomOriginExchGrossRate: ?Number, randomOriginExchOpFeePerc: ?Number, randomOriginExchVetRate: ?Number, randomResultCurrency: CurrencyCode, randomResultAmount: Number} An associative array containing the generated conversion values, including origin and result currencies, amounts, and exchange rates.
      */
     private function generateConversionValues(WalletMovementType $type, ?CurrencyCode $originCurrency = null, ?CurrencyCode $resultCurrency = null): array
     {
@@ -160,7 +160,7 @@ class WalletMovementFactory extends Factory
             'randomOriginExchOpFeePerc' => $randomOriginExchOpFeePerc,
             'randomOriginExchVetRate' => $randomOriginExchVetRate,
             'randomResultCurrency' => $randomResultCurrency,
-            'randomResultAmount' => $randomOriginAmount->mul($randomOriginExchVetRate ?? 1),
+            'randomResultAmount' => $randomOriginAmount * ($randomOriginExchVetRate ?? 1),
         ];
     }
 }

@@ -29,7 +29,6 @@ class WalletFactory extends Factory
      * Indicate that the model should have a specific currency code.
      *
      * @param  CurrencyCode  $currencyCode  The currency code to set for the wallet.
-     * @return static The factory instance with the specified currency code.
      */
     public function ofViewCurrency(CurrencyCode $currencyCode): static
     {
@@ -42,7 +41,6 @@ class WalletFactory extends Factory
      * Indicate that the model should have a specific fiscal residence currency code.
      *
      * @param  CurrencyCode  $currencyCode  The currency code to set for the wallet.
-     * @return static The factory instance with the specified currency code.
      */
     public function ofFiscalResidenceCurrency(CurrencyCode $currencyCode): static
     {
