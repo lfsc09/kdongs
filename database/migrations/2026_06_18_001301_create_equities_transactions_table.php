@@ -16,13 +16,13 @@ return new class extends Migration
             $table->foreignUuid('equity_position_id')->constrained('equities_positions')->cascadeOnUpdate()->cascadeOnDelete()->index();
             $table->string('transaction_type')->comment('Type of transaction (e.g., buy, sell, transfer_in, transfer_out, etc.)');
             $table->dateTime('date_utc')->comment('Date and time of the transaction in UTC');
-            // Quantity and price for buy/sell transactions (always positive values)
+            // Quantity and price for buy/sell transactions (positive values)
             $table->decimal('shares_amount', 20, 6)->nullable()->comment('Amount of shares involved in the transaction');
             $table->decimal('price_quote', 20, 6)->nullable()->comment('Price per share for the transaction');
             // Corporate events in cash (e.g Provents) or multiplier events (e.g. Stock Split)
             $table->decimal('cash_amount', 20, 6)->nullable()->comment('Total cash amount involved in the transaction (e.g., dividends, cash proceeds)');
             $table->decimal('factor', 20, 6)->nullable()->comment('Factor for corporate events (e.g., stock split ratio)');
-            // Costs (mostly negative values)
+            // Costs (positive values)
             $table->decimal('taxes', 20, 6)->nullable()->comment('Total taxes applied to the transaction');
             $table->decimal('fees', 20, 6)->nullable()->comment('Total fees applied to the transaction');
             // Speficic fields for dividends

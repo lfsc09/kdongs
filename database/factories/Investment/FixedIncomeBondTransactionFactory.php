@@ -28,8 +28,8 @@ class FixedIncomeBondTransactionFactory extends Factory
     {
         /** @var TransactionType $randomTransactionType */
         $randomTransactionType = $this->faker->randomElement(TransactionType::cases());
-        $randomUnitPrice = new Number($this->faker->randomFloat(6, 50, 150));
-        $randomSharesAmount = new Number($this->faker->randomFloat(6, 1, 1000));
+        $randomUnitPrice = new Number(sprintf('%.6f', $this->faker->randomFloat(6, 50, 150)));
+        $randomSharesAmount = new Number(sprintf('%.6f', $this->faker->randomFloat(6, 1, 1000)));
 
         return [
             'transaction_type' => $randomTransactionType,
@@ -128,7 +128,7 @@ class FixedIncomeBondTransactionFactory extends Factory
     {
         if ($transactionType->isSell()) {
             // Random taxes percentage between 0% and 5%
-            $randomTaxesPercentage = new Number($this->faker->randomFloat(6, 0, 0.05));
+            $randomTaxesPercentage = new Number(sprintf('%.6f', $this->faker->randomFloat(6, 0, 0.05)));
 
             return $unitPrice * $sharesAmount * $randomTaxesPercentage;
         }
@@ -153,7 +153,7 @@ class FixedIncomeBondTransactionFactory extends Factory
         }
 
         // Random fees percentage between 0% and 2%
-        $randomFeesPercentage = new Number($this->faker->randomFloat(6, 0, 0.02));
+        $randomFeesPercentage = new Number(sprintf('%.6f', $this->faker->randomFloat(6, 0, 0.02)));
 
         return $unitPrice * $sharesAmount * $randomFeesPercentage;
     }
@@ -173,7 +173,7 @@ class FixedIncomeBondTransactionFactory extends Factory
         }
 
         // Random FX rate between 0.5 and 5.0
-        return new Number($this->faker->randomFloat(6, 0.5, 5.0));
+        return new Number(sprintf('%.6f', $this->faker->randomFloat(6, 0.5, 5.0)));
     }
 
     /**

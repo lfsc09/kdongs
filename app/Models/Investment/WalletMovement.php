@@ -2,8 +2,9 @@
 
 namespace App\Models\Investment;
 
-use App\Enums\Investments\CurrencyCode;
-use App\Enums\Investments\WalletMovementType;
+use App\Casts\BcNumberCast;
+use App\Enums\Investment\CurrencyCode;
+use App\Enums\Investment\WalletMovementType;
 use BcMath\Number;
 use Database\Factories\Investment\WalletMovementFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -44,12 +45,12 @@ class WalletMovement extends Model
         return [
             'type' => WalletMovementType::class,
             'source_currency' => CurrencyCode::class,
-            'source_amount' => Number::class,
-            'fx_gross_rate' => Number::class,
-            'fx_fee_percentage' => Number::class,
-            'fx_net_rate' => Number::class,
+            'source_amount' => BcNumberCast::class,
+            'fx_gross_rate' => BcNumberCast::class,
+            'fx_fee_percentage' => BcNumberCast::class,
+            'fx_net_rate' => BcNumberCast::class,
             'target_currency' => CurrencyCode::class,
-            'target_amount' => Number::class,
+            'target_amount' => BcNumberCast::class,
         ];
     }
 

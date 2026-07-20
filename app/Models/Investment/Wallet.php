@@ -2,7 +2,7 @@
 
 namespace App\Models\Investment;
 
-use App\Enums\Investments\CurrencyCode;
+use App\Enums\Investment\CurrencyCode;
 use App\Models\User;
 use Database\Factories\Investment\WalletFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -55,5 +55,13 @@ class Wallet extends Model
     public function movements()
     {
         return $this->hasMany(WalletMovement::class);
+    }
+
+    /**
+     * Get the fixed income bonds associated with the wallet.
+     */
+    public function bonds()
+    {
+        return $this->hasMany(FixedIncomeBond::class);
     }
 }

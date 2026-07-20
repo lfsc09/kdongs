@@ -2,13 +2,14 @@
 
 namespace App\Models\Investment;
 
+use App\Casts\BcNumberCast;
 use App\Enums\Investment\CountryCode;
+use App\Enums\Investment\CurrencyCode;
 use App\Enums\Investment\DoneState;
 use App\Enums\Investment\FixedIncome\AssetClass;
 use App\Enums\Investment\FixedIncome\BondType;
 use App\Enums\Investment\FixedIncome\IndexType;
 use App\Enums\Investment\FixedIncome\InterestType;
-use App\Enums\Investments\CurrencyCode;
 use BcMath\Number;
 use Carbon\Carbon;
 use Database\Factories\Investment\FixedIncomeBondFactory;
@@ -65,10 +66,10 @@ class FixedIncomeBond extends Model
             'maturity_date_utc' => 'datetime',
             'enter_date_utc' => 'datetime',
             'exit_date_utc' => 'datetime',
-            'total_shares_amount' => Number::class,
-            'total_input_amount' => Number::class,
-            'current_gross_amount' => Number::class,
-            'current_net_amount' => Number::class,
+            'total_shares_amount' => BcNumberCast::class,
+            'total_input_amount' => BcNumberCast::class,
+            'current_gross_amount' => BcNumberCast::class,
+            'current_net_amount' => BcNumberCast::class,
         ];
     }
 

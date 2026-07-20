@@ -2,8 +2,8 @@
 
 namespace Database\Factories\Investment;
 
-use App\Enums\Investments\CurrencyCode;
-use App\Enums\Investments\WalletMovementType;
+use App\Enums\Investment\CurrencyCode;
+use App\Enums\Investment\WalletMovementType;
 use App\Models\Investment\WalletMovement;
 use BcMath\Number;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,28 +20,29 @@ class WalletMovementFactory extends Factory
      */
     public function definition(): array
     {
-        $randomType = $this->faker->randomElement(WalletMovementType::cases());
+        /** @var CurrencyCode $randomSourceCurrency */
+        $randomSourceCurrency = $this->faker->randomElement(CurrencyCode::cases());
+        /** @var CurrencyCode $randomTargetCurrency */
+        $randomTargetCurrency = $this->faker->boolean(70) ? $randomSourceCurrency : $this->faker->randomElement(CurrencyCode::cases());
 
         [
-            'randomOriginCurrency' => $randomOriginCurrency,
-            'randomOriginAmount' => $randomOriginAmount,
-            'randomOriginExchGrossRate' => $randomOriginExchGrossRate,
-            'randomOriginExchOpFeePerc' => $randomOriginExchOpFeePerc,
-            'randomOriginExchVetRate' => $randomOriginExchVetRate,
-            'randomResultCurrency' => $randomResultCurrency,
-            'randomResultAmount' => $randomResultAmount,
-        ] = $this->generateConversionValues($randomType);
+            'randomSourceAmount' => $randomSourceAmount,
+            'randomFxGrossRate' => $randomFxGrossRate,
+            'randomFxFeePercentage' => $randomFxFeePercentage,
+            'randomFxNetRate' => $randomFxNetRate,
+            'randomTargetAmount' => $randomTargetAmount,
+        ] = $this->generateConversionValues($randomSourceCurrency, $randomTargetCurrency);
 
         return [
-            'type' => $randomType,
+            'type' => $this->faker->randomElement(WalletMovementType::cases()),
             'institution' => $this->faker->company(),
-            'origin_currency_code' => $randomOriginCurrency,
-            'origin_amount' => $randomOriginAmount,
-            'origin_exch_gross_rate' => $randomOriginExchGrossRate,
-            'origin_exch_op_fee_perc' => $randomOriginExchOpFeePerc,
-            'origin_exch_vet_rate' => $randomOriginExchVetRate,
-            'result_currency_code' => $randomResultCurrency,
-            'result_amount' => $randomResultAmount,
+            'source_currency' => $randomSourceCurrency,
+            'source_amount' => $randomSourceAmount,
+            'fx_gross_rate' => $randomFxGrossRate,
+            'fx_fee_percentage' => $randomFxFeePercentage,
+            'fx_net_rate' => $randomFxNetRate,
+            'target_currency' => $randomTargetCurrency,
+            'target_amount' => $randomTargetAmount,
             'details' => $this->faker->sentence(),
         ];
     }
@@ -53,9 +54,6 @@ class WalletMovementFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => WalletMovementType::DEPOSIT,
-            // Ensure the origin amount is positive for deposits
-            'origin_amount' => abs($attributes['origin_amount']),
-            'result_amount' => abs($attributes['result_amount']),
         ]);
     }
 
@@ -66,101 +64,114 @@ class WalletMovementFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => WalletMovementType::WITHDRAWAL,
-            // Ensure the origin amount is negative for withdrawals
-            'origin_amount' => -abs($attributes['origin_amount']),
-            'result_amount' => -abs($attributes['result_amount']),
         ]);
     }
 
     /**
-     * Indicate that the model should have the same currency for origin and result.
+     * Indicate that the model should have a specific source currency.
      */
-    public function sameCurrency(): static
+    public function ofSourceCurrency(CurrencyCode $currency): static
     {
-        return $this->state(fn (array $attributes) => [
-            'origin_exch_gross_rate' => null,
-            'origin_exch_op_fee_perc' => null,
-            'origin_exch_vet_rate' => null,
-            'result_currency_code' => $attributes['origin_currency_code'],
-            'result_amount' => $attributes['origin_amount'],
-        ]);
-    }
-
-    /**
-     * Indicate that the model should have different currencies for origin and result, with appropriate conversion values.
-     */
-    public function differentCurrency(): static
-    {
-        return $this->state(function (array $attributes) {
-            $randomResultCurrency = $this->faker->randomElement(
-                array_filter(
-                    CurrencyCode::cases(),
-                    fn ($currency) => $currency !== $attributes['origin_currency_code']
-                )
-            );
+        return $this->state(function (array $attributes) use ($currency) {
+            /** @var CurrencyCode $randomTargetCurrency */
+            $randomTargetCurrency = $this->faker->boolean(70) ? $currency : $this->faker->randomElement(CurrencyCode::cases());
 
             [
-                'randomOriginAmount' => $randomOriginAmount,
-                'randomOriginExchGrossRate' => $randomOriginExchGrossRate,
-                'randomOriginExchOpFeePerc' => $randomOriginExchOpFeePerc,
-                'randomOriginExchVetRate' => $randomOriginExchVetRate,
-                'randomResultAmount' => $randomResultAmount,
-            ] = $this->generateConversionValues(
-                $attributes['type'],
-                $attributes['origin_currency_code'],
-                $randomResultCurrency
-            );
+                'randomSourceAmount' => $randomSourceAmount,
+                'randomFxGrossRate' => $randomFxGrossRate,
+                'randomFxFeePercentage' => $randomFxFeePercentage,
+                'randomFxNetRate' => $randomFxNetRate,
+                'randomTargetAmount' => $randomTargetAmount,
+            ] = $this->generateConversionValues($currency, $randomTargetCurrency);
 
             return [
-                'origin_amount' => $randomOriginAmount,
-                'origin_exch_gross_rate' => $randomOriginExchGrossRate,
-                'origin_exch_op_fee_perc' => $randomOriginExchOpFeePerc,
-                'origin_exch_vet_rate' => $randomOriginExchVetRate,
-                'result_currency_code' => $randomResultCurrency,
-                'result_amount' => $randomResultAmount,
+                'source_currency' => $currency,
+                'source_amount' => $randomSourceAmount,
+                'fx_gross_rate' => $randomFxGrossRate,
+                'fx_fee_percentage' => $randomFxFeePercentage,
+                'fx_net_rate' => $randomFxNetRate,
+                'target_currency' => $randomTargetCurrency,
+                'target_amount' => $randomTargetAmount,
             ];
         });
     }
 
     /**
-     * Generate random conversion values for the wallet movement based on the type (deposit or withdrawal) and optionally specified origin and result currencies.
-     *
-     * @param  WalletMovementType  $type  The type of wallet movement (deposit or withdrawal).
-     * @param  CurrencyCode|null  $originCurrency  Optional specific origin currency code to use for the movement.
-     * @param  CurrencyCode|null  $resultCurrency  Optional specific result currency code to use for the movement.
-     * @return array{randomOriginCurrency: CurrencyCode, randomOriginAmount: Number, randomOriginExchGrossRate: ?Number, randomOriginExchOpFeePerc: ?Number, randomOriginExchVetRate: ?Number, randomResultCurrency: CurrencyCode, randomResultAmount: Number} An associative array containing the generated conversion values, including origin and result currencies, amounts, and exchange rates.
+     * Indicate that the model should have target currency the same as the source currency.
      */
-    private function generateConversionValues(WalletMovementType $type, ?CurrencyCode $originCurrency = null, ?CurrencyCode $resultCurrency = null): array
+    public function sameCurrencyAsSource(): static
     {
-        /** @var CurrencyCode $randomOriginCurrency */
-        $randomOriginCurrency = $originCurrency ?? $this->faker->randomElement(CurrencyCode::cases());
-        /** @var CurrencyCode $randomResultCurrency */
-        $randomResultCurrency = $resultCurrency ?? $this->faker->randomElement(CurrencyCode::cases());
+        return $this->state(fn (array $attributes) => [
+            'fx_gross_rate' => null,
+            'fx_fee_percentage' => null,
+            'fx_net_rate' => null,
+            'target_currency' => $attributes['source_currency'],
+            'target_amount' => $attributes['source_amount'],
+        ]);
+    }
 
-        $randomOriginAmount = new Number(
-            $type->isDeposit()
-                ? $this->faker->numberBetween(10000, 10000000)
-                : -$this->faker->numberBetween(10000, 10000000)
-        );
+    /**
+     * Indicate that the model should have different target currency than the source currency.
+     */
+    public function differentCurrencyFromSource(): static
+    {
+        return $this->state(function (array $attributes) {
+            $randomTargetCurrency = $this->faker->randomElement(
+                array_filter(
+                    CurrencyCode::cases(),
+                    fn ($currency) => $currency !== $attributes['source_currency']
+                )
+            );
 
-        if ($randomOriginCurrency === $randomResultCurrency) {
-            $randomOriginExchGrossRate = null;
-            $randomOriginExchOpFeePerc = null;
-            $randomOriginExchVetRate = null;
+            [
+                'randomSourceAmount' => $randomSourceAmount,
+                'randomFxGrossRate' => $randomFxGrossRate,
+                'randomFxFeePercentage' => $randomFxFeePercentage,
+                'randomFxNetRate' => $randomFxNetRate,
+                'randomTargetAmount' => $randomTargetAmount,
+            ] = $this->generateConversionValues(
+                $attributes['source_currency'],
+                $randomTargetCurrency
+            );
+
+            return [
+                'source_amount' => $randomSourceAmount,
+                'fx_gross_rate' => $randomFxGrossRate,
+                'fx_fee_percentage' => $randomFxFeePercentage,
+                'fx_net_rate' => $randomFxNetRate,
+                'target_currency' => $randomTargetCurrency,
+                'target_amount' => $randomTargetAmount,
+            ];
+        });
+    }
+
+    /**
+     * Generate random conversion values for the wallet movement with specified source and target currencies.
+     *
+     * @param  CurrencyCode  $sourceCurrency  Specific source currency code to use for the movement.
+     * @param  CurrencyCode  $targetCurrency  Specific target currency code to use for the movement.
+     * @return array{randomSourceAmount: Number, randomFxGrossRate: ?Number, randomFxFeePercentage: ?Number, randomFxNetRate: ?Number, randomTargetAmount: Number} An associative array containing the generated conversion values, including source and target amounts, and exchange rates.
+     */
+    private function generateConversionValues(CurrencyCode $sourceCurrency, CurrencyCode $targetCurrency): array
+    {
+        $randomSourceAmount = new Number(sprintf('%.6f', $this->faker->randomFloat(6, 1000, 100000)));
+
+        if ($sourceCurrency === $targetCurrency) {
+            $randomFxGrossRate = null;
+            $randomFxFeePercentage = null;
+            $randomFxNetRate = null;
         } else {
-            $randomOriginExchGrossRate = new Number($this->faker->randomFloat(6, 0, 7));
-            $randomOriginExchOpFeePerc = new Number($this->faker->randomFloat(2, 0, 0.05));
-            $randomOriginExchVetRate = $this->calculateExchVetRate($randomOriginExchGrossRate, $randomOriginExchOpFeePerc);
+            $randomFxGrossRate = new Number(sprintf('%.6f', $this->faker->randomFloat(6, 0, 7)));
+            $randomFxFeePercentage = new Number(sprintf('%.2f', $this->faker->randomFloat(2, 0, 0.05)));
+            $randomFxNetRate = $randomFxGrossRate * (new Number('1') - $randomFxFeePercentage);
         }
 
         return [
-            'randomOriginCurrency' => $randomOriginCurrency,
-            'randomOriginAmount' => $randomOriginAmount,
-            'randomOriginExchGrossRate' => $randomOriginExchGrossRate,
-            'randomOriginExchOpFeePerc' => $randomOriginExchOpFeePerc,
-            'randomOriginExchVetRate' => $randomOriginExchVetRate,
-            'randomResultCurrency' => $randomResultCurrency,
-            'randomResultAmount' => $randomOriginAmount * ($randomOriginExchVetRate ?? 1),
+            'randomSourceAmount' => $randomSourceAmount,
+            'randomFxGrossRate' => $randomFxGrossRate,
+            'randomFxFeePercentage' => $randomFxFeePercentage,
+            'randomFxNetRate' => $randomFxNetRate,
+            'randomTargetAmount' => $randomSourceAmount * ($randomFxNetRate ?? 1),
         ];
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums\Investments;
+namespace App\Enums\Investment;
 
 enum CurrencyCode: string
 {

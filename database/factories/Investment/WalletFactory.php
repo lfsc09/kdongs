@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Investment;
 
-use App\Enums\Investments\CurrencyCode;
+use App\Enums\Investment\CurrencyCode;
 use App\Models\Investment\Wallet;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

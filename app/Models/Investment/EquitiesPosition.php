@@ -2,10 +2,11 @@
 
 namespace App\Models\Investment;
 
+use App\Casts\BcNumberCast;
 use App\Enums\Investment\CountryCode;
+use App\Enums\Investment\CurrencyCode;
 use App\Enums\Investment\DoneState;
 use App\Enums\Investment\EquitiesPosition\AssetType;
-use App\Enums\Investments\CurrencyCode;
 use BcMath\Number;
 use Carbon\Carbon;
 use Database\Factories\Investment\EquitiesPositionFactory;
@@ -46,8 +47,8 @@ class EquitiesPosition extends Model
             'currency' => CurrencyCode::class,
             'country_code' => CountryCode::class,
             'asset_type' => AssetType::class,
-            'total_shares_amount' => Number::class,
-            'average_price' => Number::class,
+            'total_shares_amount' => BcNumberCast::class,
+            'average_price' => BcNumberCast::class,
         ];
     }
 

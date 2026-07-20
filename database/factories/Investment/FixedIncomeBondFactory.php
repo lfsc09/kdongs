@@ -3,12 +3,12 @@
 namespace Database\Factories\Investment;
 
 use App\Enums\Investment\CountryCode;
+use App\Enums\Investment\CurrencyCode;
 use App\Enums\Investment\DoneState;
 use App\Enums\Investment\FixedIncome\AssetClass;
 use App\Enums\Investment\FixedIncome\BondType;
 use App\Enums\Investment\FixedIncome\IndexType;
 use App\Enums\Investment\FixedIncome\InterestType;
-use App\Enums\Investments\CurrencyCode;
 use App\Models\Investment\FixedIncomeBond;
 use App\Models\Investment\FixedIncomeBondTransaction;
 use BcMath\Number;
@@ -130,6 +130,7 @@ class FixedIncomeBondFactory extends Factory
             'done_state' => $randomDoneState,
             'currency' => $currency,
             'country_code' => $randomCountryCode,
+            'name' => $this->faker->word(),
             'asset_class' => $assetClass,
             'bond_type' => $bondType,
             'holder_institution' => $this->faker->company(),
@@ -187,12 +188,12 @@ class FixedIncomeBondFactory extends Factory
                 BondType::USD_TREASURY_NOTE => $this->generateTransactions(random_int(1, 3), $bond),
             };
 
-            $bond->update([
-                'total_shares_amount' => $transactionTotals->boughtTotalSharesAmount,
-                'total_input_amount' => $transactionTotals->boughtTotalInput,
-                'current_gross_amount' => $transactionTotals->sellTotalGross,
-                'current_net_amount' => $transactionTotals->sellTotalNet,
-            ]);
+            $bond->total_shares_amount = $transactionTotals->boughtTotalSharesAmount;
+            $bond->total_input_amount = $transactionTotals->boughtTotalInput;
+            $bond->current_gross_amount = $transactionTotals->sellTotalGross;
+            $bond->current_net_amount = $transactionTotals->sellTotalNet;
+
+            $bond->save();
         });
     }
 
@@ -206,22 +207,29 @@ class FixedIncomeBondFactory extends Factory
     private function generateTransactions(int $numberOfBuyTransactions, FixedIncomeBond $bond): object
     {
         $buyTransactionDate = $bond->enter_date_utc;
-        $transactionDateEndLimit = $bond->exit_date_utc->subDay() ?? Carbon::now();
+        $transactionDateEndLimit = $bond->exit_date_utc?->subDay() ?? Carbon::now();
 
-        $transactionDetails = new class(new Number(0), new Number(0), [])
+        $transactionDetails = new class(new Number(0), new Number(0), [], new Number(0), new Number(0))
         {
             public function __construct(
                 public Number $boughtTotalSharesAmount,
                 public Number $boughtTotalInput,
                 public array $boughtUnitPrices,
-                public Number $sellTotalGross = new Number(0),
-                public Number $sellTotalNet = new Number(0)
+                public Number $sellTotalGross,
+                public Number $sellTotalNet
             ) {}
         };
 
         for ($i = 0; $i < $numberOfBuyTransactions; $i++) {
-            $buyTransactionSharesAmount = new Number($this->faker->randomFloat(6, self::RANDOM_TRANSACTION_SHARES_RANGE[$bond->bond_type->value]['from'], self::RANDOM_TRANSACTION_SHARES_RANGE[$bond->bond_type->value]['to']));
-            $buyTransactionUnitPrice = new Number($this->faker->randomFloat(6, self::RANDOM_TRANSACTION_UNIT_PRICE_RANGE[$bond->bond_type->value]['from'], self::RANDOM_TRANSACTION_UNIT_PRICE_RANGE[$bond->bond_type->value]['to']));
+            if ($i > 0) {
+                $nextPossibleBuyLowerLimit = $buyTransactionDate->copy()->addDay();
+                if ($nextPossibleBuyLowerLimit->diffInDays($transactionDateEndLimit) > 0) {
+                    $buyTransactionDate = Carbon::createFromTimestamp(random_int($nextPossibleBuyLowerLimit->timestamp, $transactionDateEndLimit->timestamp));
+                }
+            }
+
+            $buyTransactionSharesAmount = new Number(sprintf('%.6f', $this->faker->randomFloat(6, self::RANDOM_TRANSACTION_SHARES_RANGE[$bond->bond_type->value]['from'], self::RANDOM_TRANSACTION_SHARES_RANGE[$bond->bond_type->value]['to'])));
+            $buyTransactionUnitPrice = new Number(sprintf('%.6f', $this->faker->randomFloat(6, self::RANDOM_TRANSACTION_UNIT_PRICE_RANGE[$bond->bond_type->value]['from'], self::RANDOM_TRANSACTION_UNIT_PRICE_RANGE[$bond->bond_type->value]['to'])));
 
             FixedIncomeBondTransaction::factory()
                 ->count(1)
@@ -235,8 +243,6 @@ class FixedIncomeBondFactory extends Factory
             $transactionDetails->boughtTotalSharesAmount += $buyTransactionSharesAmount;
             $transactionDetails->boughtUnitPrices[] = $buyTransactionUnitPrice;
             $transactionDetails->boughtTotalInput += $buyTransactionUnitPrice * $buyTransactionSharesAmount;
-
-            $buyTransactionDate = Carbon::createFromTimestamp(random_int($buyTransactionDate->addDay()->timestamp, $transactionDateEndLimit->timestamp));
         }
 
         if ($numberOfBuyTransactions && $bond->done_state->isDone()) {
@@ -244,19 +250,24 @@ class FixedIncomeBondFactory extends Factory
 
             // While there are shares left to sell, create sell transactions
             while ($buyTotalSharesAmount->compare(0) === 1) {
-                $remainingDaysUntilExit = $bond->exit_date_utc->diffInDays($buyTransactionDate);
-                $sellAllAtOnce = $remainingDaysUntilExit <= 1 || $this->faker->boolean(self::DEFAULT_PROBABILITY_OF_SELL_ALL_AT_ONCE[$bond->bond_type->value] * 100);
+                $nextPossibleSellLowerLimit = $buyTransactionDate->copy()->addDay();
+                $remainingDaysUntilExit = $nextPossibleSellLowerLimit->diffInDays($bond->exit_date_utc);
+                $sellAllAtOnce = $remainingDaysUntilExit <= 0 || $this->faker->boolean(self::DEFAULT_PROBABILITY_OF_SELL_ALL_AT_ONCE[$bond->bond_type->value] * 100);
 
                 $sellTransactionDate = $sellAllAtOnce
                     ? $bond->exit_date_utc
-                    : Carbon::createFromTimestamp(random_int($buyTransactionDate->addDay()->timestamp, $bond->exit_date_utc->subDay()->timestamp));
+                    : Carbon::createFromTimestamp(random_int($nextPossibleSellLowerLimit->timestamp, $bond->exit_date_utc->timestamp));
 
                 $randomSharesAmount = $sellAllAtOnce
                     ? $transactionDetails->boughtTotalSharesAmount
-                    : new Number($this->faker->randomFloat(6, self::RANDOM_TRANSACTION_SHARES_RANGE[$bond->bond_type->value]['from'], $transactionDetails->boughtTotalSharesAmount));
+                    : new Number(sprintf('%.6f', $this->faker->randomFloat(6, self::RANDOM_TRANSACTION_SHARES_RANGE[$bond->bond_type->value]['from'], (float) $transactionDetails->boughtTotalSharesAmount->value)));
 
-                $randomUnitPriceGainPercentage = new Number($this->faker->randomFloat(6, self::RANDOM_SALE_PRICE_FACTOR_RANGE[$bond->bond_type->value]['from'], self::RANDOM_SALE_PRICE_FACTOR_RANGE[$bond->bond_type->value]['to']));
-                $avgUnitPrice = new Number(array_sum($transactionDetails->boughtUnitPrices) / count($transactionDetails->boughtUnitPrices));
+                $randomUnitPriceGainPercentage = new Number(sprintf('%.6f', $this->faker->randomFloat(6, self::RANDOM_SALE_PRICE_FACTOR_RANGE[$bond->bond_type->value]['from'], self::RANDOM_SALE_PRICE_FACTOR_RANGE[$bond->bond_type->value]['to'])));
+                $avgUnitPrice = array_reduce(
+                    $transactionDetails->boughtUnitPrices,
+                    fn (Number $carry, Number $price) => $carry + $price,
+                    new Number(0)
+                ) / count($transactionDetails->boughtUnitPrices);
                 $randomUnitPrice = $avgUnitPrice * $randomUnitPriceGainPercentage;
 
                 $sellTransactionsCollection = FixedIncomeBondTransaction::factory()
@@ -433,7 +444,7 @@ class FixedIncomeBondFactory extends Factory
     private function generateDatesBy(DoneState $doneState): array
     {
         if ($doneState->isDone()) {
-            $maturityDateUtc = Carbon::now()->subDays(random_int(self::RANDOM_MATURITY_DAYS_RANGE[DoneState::DONE->value]['from'], self::RANDOM_MATURITY_DAYS_RANGE[DoneState::DONE->value]['to']));
+            $maturityDateUtc = Carbon::now()->addDays(random_int(self::RANDOM_MATURITY_DAYS_RANGE[DoneState::DONE->value]['from'], self::RANDOM_MATURITY_DAYS_RANGE[DoneState::DONE->value]['to']));
         } elseif ($doneState->isActive()) {
             $maturityDateUtc = Carbon::now()->addDays(random_int(self::RANDOM_MATURITY_DAYS_RANGE[DoneState::ACTIVE->value]['from'], self::RANDOM_MATURITY_DAYS_RANGE[DoneState::ACTIVE->value]['to']));
         } else {
@@ -448,7 +459,7 @@ class FixedIncomeBondFactory extends Factory
 
         if ($doneState->isDone()) {
             // Random exit date between the enter date and the maturity date
-            $exitDateUtc = $enterDateUtc->copy()->addDays(random_int(1, $maturityDateUtc->diffInDays($enterDateUtc)));
+            $exitDateUtc = $enterDateUtc->copy()->addDays(random_int(1, $enterDateUtc->diffInDays($maturityDateUtc)));
         } else {
             $exitDateUtc = null;
         }

@@ -2,6 +2,7 @@
 
 namespace App\Models\Investment;
 
+use App\Casts\BcNumberCast;
 use App\Enums\Investment\EquitiesPosition\TransactionType;
 use BcMath\Number;
 use Carbon\Carbon;
@@ -46,15 +47,15 @@ class EquitiesPositionTransaction extends Model
         return [
             'transaction_type' => TransactionType::class,
             'date_utc' => 'datetime',
-            'shares_amount' => Number::class,
-            'price_quote' => Number::class,
-            'cash_amount' => Number::class,
-            'factor' => Number::class,
-            'taxes' => Number::class,
-            'fees' => Number::class,
+            'shares_amount' => BcNumberCast::class,
+            'price_quote' => BcNumberCast::class,
+            'cash_amount' => BcNumberCast::class,
+            'factor' => BcNumberCast::class,
+            'taxes' => BcNumberCast::class,
+            'fees' => BcNumberCast::class,
             'date_com_utc' => 'datetime',
             'date_payment_utc' => 'datetime',
-            'fx_rate_to_residency' => Number::class,
+            'fx_rate_to_residency' => BcNumberCast::class,
         ];
     }
 

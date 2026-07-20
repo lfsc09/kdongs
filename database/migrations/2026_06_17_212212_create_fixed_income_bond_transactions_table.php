@@ -18,10 +18,10 @@ return new class extends Migration
             $table->dateTime('date_utc')->comment('Date and time of the transaction in UTC');
             // Index value of the bond at the time of the transaction
             $table->decimal('index_value', 20, 6)->comment('Index value at the time of the transaction');
-            // Unit price and shares amount
+            // Unit price and shares amount (positive values)
             $table->decimal('unit_price', 20, 6)->comment('Unit price of the bond at the time of the transaction');
             $table->decimal('shares_amount', 20, 6)->comment('Amount of shares involved in the transaction');
-            // Costs (mostly negative values)
+            // Costs (positive values)
             $table->decimal('taxes', 20, 6)->comment('Total taxes applied to the transaction');
             $table->decimal('fees', 20, 6)->comment('Total fees applied to the transaction');
             // Foreign exchange rate to the residency currency at the time of the transaction

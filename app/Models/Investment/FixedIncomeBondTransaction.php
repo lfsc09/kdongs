@@ -2,6 +2,7 @@
 
 namespace App\Models\Investment;
 
+use App\Casts\BcNumberCast;
 use App\Enums\Investment\FixedIncome\TransactionType;
 use BcMath\Number;
 use Carbon\Carbon;
@@ -41,12 +42,12 @@ class FixedIncomeBondTransaction extends Model
         return [
             'transaction_type' => TransactionType::class,
             'date_utc' => 'datetime',
-            'index_value' => Number::class,
-            'unit_price' => Number::class,
-            'shares_amount' => Number::class,
-            'taxes' => Number::class,
-            'fees' => Number::class,
-            'fx_rate_to_residency' => Number::class,
+            'index_value' => BcNumberCast::class,
+            'unit_price' => BcNumberCast::class,
+            'shares_amount' => BcNumberCast::class,
+            'taxes' => BcNumberCast::class,
+            'fees' => BcNumberCast::class,
+            'fx_rate_to_residency' => BcNumberCast::class,
         ];
     }
 
